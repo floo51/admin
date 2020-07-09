@@ -5,17 +5,17 @@ import {
   GET_MANY_REFERENCE,
   GET_ONE,
   UPDATE,
-} from 'react-admin';
-import isPlainObject from 'lodash.isplainobject';
-import { parseHydraDocumentation } from '@api-platform/api-doc-parser';
-import fetchHydra from './fetchHydra';
-import { resolveSchemaParameters } from './schemaAnalyzer';
+} from "react-admin";
+import isPlainObject from "lodash.isplainobject";
+import { parseHydraDocumentation } from "@api-platform/api-doc-parser";
+import fetchHydra from "./fetchHydra";
+import { resolveSchemaParameters } from "./schemaAnalyzer";
 
 class ReactAdminDocument {
   constructor(obj) {
     Object.assign(this, obj, {
       originId: obj.id,
-      id: obj['@id'],
+      id: obj["@id"],
     });
   }
 
@@ -49,7 +49,7 @@ export const transformJsonLdDocumentToReactAdminDocument = (
   document,
   clone = true,
   addToCache = true,
-  useEmbedded = false,
+  useEmbedded = false
 ) => {
   if (clone) {
     // deep clone documents
@@ -57,24 +57,24 @@ export const transformJsonLdDocumentToReactAdminDocument = (
   }
 
   // The main document is a JSON-LD document, convert it and store it in the cache
-  if (document['@id']) {
+  if (document["@id"]) {
     document = new ReactAdminDocument(document);
   }
 
   // Replace embedded objects by their IRIs, and store the object itself in the cache to reuse without issuing new HTTP requests.
   Object.keys(document).forEach((key) => {
     // to-one
-    if (isPlainObject(document[key]) && document[key]['@id']) {
+    if (isPlainObject(document[key]) && document[key]["@id"]) {
       if (addToCache) {
         reactAdminDocumentsCache[
-          document[key]['@id']
+          document[key]["@id"]
         ] = transformJsonLdDocumentToReactAdminDocument(
           document[key],
           false,
-          false,
+          false
         );
       }
-      document[key] = useEmbedded ? document[key] : document[key]['@id'];
+      document[key] = useEmbedded ? document[key] : document[key]["@id"];
 
       return;
     }
@@ -84,16 +84,16 @@ export const transformJsonLdDocumentToReactAdminDocument = (
       Array.isArray(document[key]) &&
       document[key].length &&
       isPlainObject(document[key][0]) &&
-      document[key][0]['@id']
+      document[key][0]["@id"]
     ) {
       document[key] = document[key].map((obj) => {
         if (addToCache) {
           reactAdminDocumentsCache[
-            obj['@id']
+            obj["@id"]
           ] = transformJsonLdDocumentToReactAdminDocument(obj, false, false);
         }
 
-        return useEmbedded ? obj : obj['@id'];
+        return useEmbedded ? obj : obj["@id"];
       });
     }
   });
@@ -118,7 +118,7 @@ export default (
   entrypoint,
   httpClient = fetchHydra,
   apiDocumentationParser = parseHydraDocumentation,
-  useEmbedded = false, // remove this parameter for 3.0 (as true)
+  useEmbedded = false // remove this parameter for 3.0 (as true)
 ) => {
   /** @type {Api} */
   let apiSchema;
@@ -136,7 +136,7 @@ export default (
         return;
       }
 
-      if (reference && data[name] === '') {
+      if (reference && data[name] === "") {
         data[name] = null;
         return;
       }
@@ -174,7 +174,7 @@ export default (
     }
 
     return convertReactAdminDataToHydraData(resource, data).then((data) =>
-      JSON.stringify(data),
+      JSON.stringify(data)
     );
   };
 
@@ -196,16 +196,16 @@ export default (
           (body) => ({
             options: {
               body,
-              method: 'POST',
+              method: "POST",
             },
             url: collectionUrl,
-          }),
+          })
         );
 
       case DELETE:
         return Promise.resolve({
           options: {
-            method: 'DELETE',
+            method: "DELETE",
           },
           url: itemUrl,
         });
@@ -218,8 +218,8 @@ export default (
         } = params;
 
         if (order) collectionUrl.searchParams.set(`order[${field}]`, order);
-        if (page) collectionUrl.searchParams.set('page', page);
-        if (perPage) collectionUrl.searchParams.set('itemsPerPage', perPage);
+        if (page) collectionUrl.searchParams.set("page", page);
+        if (perPage) collectionUrl.searchParams.set("itemsPerPage", perPage);
         if (params.filter) {
           const buildFilterParams = (key, nestedFilter, rootKey) => {
             const filterValue = nestedFilter[key];
@@ -228,7 +228,7 @@ export default (
               filterValue.forEach((arrayFilterValue, index) => {
                 collectionUrl.searchParams.set(
                   `${rootKey}[${index}]`,
-                  arrayFilterValue,
+                  arrayFilterValue
                 );
               });
               return;
@@ -241,23 +241,23 @@ export default (
 
             Object.keys(filterValue).forEach((subKey) => {
               if (
-                rootKey === 'exists' ||
+                rootKey === "exists" ||
                 [
-                  'after',
-                  'before',
-                  'strictly_after',
-                  'strictly_before',
-                  'lt',
-                  'gt',
-                  'lte',
-                  'gte',
-                  'between',
+                  "after",
+                  "before",
+                  "strictly_after",
+                  "strictly_before",
+                  "lt",
+                  "gt",
+                  "lte",
+                  "gte",
+                  "between",
                 ].includes(subKey)
               ) {
                 return buildFilterParams(
                   subKey,
                   filterValue,
-                  `${rootKey}[${subKey}]`,
+                  `${rootKey}[${subKey}]`
                 );
               }
               buildFilterParams(subKey, filterValue, `${rootKey}.${subKey}`);
@@ -290,14 +290,14 @@ export default (
           (body) => ({
             options: {
               body,
-              method: 'PUT',
+              method: "PUT",
             },
             url: itemUrl,
-          }),
+          })
         );
 
       default:
-        throw new Error(`Unsupported fetch action type ${type}`);
+        return Promise.reject(`Unsupported fetch action type ${type}`);
     }
   };
 
@@ -345,35 +345,35 @@ export default (
   const convertHydraResponseToReactAdminResponse = (
     type,
     resource,
-    response,
+    response
   ) => {
     switch (type) {
       case GET_LIST:
       case GET_MANY_REFERENCE:
         // TODO: support other prefixes than "hydra:"
         return Promise.resolve(
-          response.json['hydra:member'].map((document) =>
+          response.json["hydra:member"].map((document) =>
             transformJsonLdDocumentToReactAdminDocument(
               document,
               true,
               true,
-              useEmbedded,
-            ),
-          ),
+              useEmbedded
+            )
+          )
         )
           .then((data) =>
             Promise.all(
               data.map((data) =>
-                convertHydraDataToReactAdminData(resource, data),
-              ),
-            ),
+                convertHydraDataToReactAdminData(resource, data)
+              )
+            )
           )
           .then((data) => ({
             data,
             total:
-              response.json?.['hydra:totalItems'] ||
-              (response.json?.['hydra:view']
-                ? response.json['hydra:view']?.['hydra:next']
+              response.json?.["hydra:totalItems"] ||
+              (response.json?.["hydra:view"]
+                ? response.json["hydra:view"]?.["hydra:next"]
                   ? -2 // there is a next page
                   : -1 // no next page
                 : -3), // no information
@@ -388,8 +388,8 @@ export default (
             response.json,
             true,
             true,
-            useEmbedded,
-          ),
+            useEmbedded
+          )
         )
           .then((data) => convertHydraDataToReactAdminData(resource, data))
           .then((data) => ({ data }));
@@ -407,7 +407,7 @@ export default (
     convertReactAdminRequestToHydraRequest(type, resource, params)
       .then(({ url, options }) => httpClient(url, options))
       .then((response) =>
-        convertHydraResponseToReactAdminResponse(type, resource, response),
+        convertHydraResponseToReactAdminResponse(type, resource, response)
       );
 
   /**
@@ -418,7 +418,7 @@ export default (
   const hasIdSearchFilter = (resource) => {
     const schema = apiSchema.resources.find((r) => r.name === resource);
     return resolveSchemaParameters(schema).then((parameters) =>
-      parameters.map((filter) => filter.variable).includes('id'),
+      parameters.map((filter) => filter.variable).includes("id")
     );
   };
 
@@ -441,8 +441,8 @@ export default (
           params.ids.map((id) =>
             reactAdminDocumentsCache[id]
               ? Promise.resolve({ data: reactAdminDocumentsCache[id] })
-              : fetchApi(GET_ONE, resource, { id }),
-          ),
+              : fetchApi(GET_ONE, resource, { id })
+          )
         ).then((responses) => ({ data: responses.map(({ data }) => data) }));
       });
     },
@@ -451,13 +451,13 @@ export default (
     update: (resource, params) => fetchApi(UPDATE, resource, params),
     updateMany: (resource, params) =>
       Promise.all(
-        params.ids.map((id) => fetchApi(UPDATE, resource, { id })),
+        params.ids.map((id) => fetchApi(UPDATE, resource, { id }))
       ).then(() => ({ data: [] })),
     create: (resource, params) => fetchApi(CREATE, resource, params),
     delete: (resource, params) => fetchApi(DELETE, resource, params),
     deleteMany: (resource, params) =>
       Promise.all(
-        params.ids.map((id) => fetchApi(DELETE, resource, { id })),
+        params.ids.map((id) => fetchApi(DELETE, resource, { id }))
       ).then(() => ({ data: [] })),
     introspect: () =>
       apiSchema
@@ -468,12 +468,12 @@ export default (
               return { data: api, customRoutes };
             })
             .catch(({ error, status }) => {
-              throw new Error(
-                'Cannot fetch API documentation:\n' +
+              return Promise.reject(
+                "Cannot fetch API documentation:\n" +
                   (error
                     ? `${error.message}\nHave you verified that CORS is correctly configured in your API?\n`
-                    : '') +
-                  (status ? `Status: ${status}` : ''),
+                    : "") +
+                  (status ? `Status: ${status}` : "")
               );
             }),
   };
